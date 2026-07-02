@@ -205,11 +205,12 @@ class ReedcrmDashboard
     }
 
     /**
-     * Get the upcoming automatic call reminders of the current user.
+     * Get the upcoming call reminders of the current user.
      *
-     * Reminders are the future to-do events created from the ProCard/EventPro
-     * "Créer une notification de rappel automatique" checkbox. They are identified by their
-     * dedicated category (REEDCRM_ACTIONCOMM_CALL_REMINDER_TAG) and their linked actioncomm_reminder row.
+     * A reminder is a "to-do" event (code AC_OTH, percent 0) that still has a pending
+     * actioncomm_reminder row for the current user. This matches the reminders created from the
+     * ProCard/EventPro "Créer une notification de rappel automatique" checkbox, including the ones
+     * created before this feature existed (no dedicated tag is required).
      *
      * @param  int   $limit Maximum number of reminders to return
      * @return array        List of reminder objects (id, label, datep, fk_soc, thirdparty_name)
@@ -222,21 +223,19 @@ class ReedcrmDashboard
 
         $reminders = [];
 
-        $reminderTag = getDolGlobalInt('REEDCRM_ACTIONCOMM_CALL_REMINDER_TAG');
-        if ($reminderTag <= 0) {
-            return $reminders;
-        }
-
         $sql  = 'SELECT a.id, a.label, a.datep, a.fk_soc, s.nom AS thirdparty_name';
         $sql .= ' FROM ' . MAIN_DB_PREFIX . 'actioncomm AS a';
-        $sql .= ' INNER JOIN ' . MAIN_DB_PREFIX . 'actioncomm_reminder AS r ON r.fk_actioncomm = a.id';
-        $sql .= ' INNER JOIN ' . MAIN_DB_PREFIX . 'categorie_actioncomm AS c ON c.fk_actioncomm = a.id';
         $sql .= ' LEFT JOIN ' . MAIN_DB_PREFIX . 'societe AS s ON s.rowid = a.fk_soc';
-        $sql .= ' WHERE c.fk_categorie = ' . ((int) $reminderTag);
-        $sql .= ' AND r.fk_user = ' . ((int) $user->id);
-        $sql .= ' AND r.status = ' . ActionCommReminder::STATUS_TODO;
+        $sql .= " WHERE a.code = 'AC_OTH'";
+        $sql .= ' AND a.percent = 0';
         $sql .= " AND a.datep >= '" . $this->db->idate(dol_now()) . "'";
         $sql .= ' AND a.entity IN (' . getEntity('agenda') . ')';
+        $sql .= ' AND EXISTS (';
+        $sql .= '     SELECT 1 FROM ' . MAIN_DB_PREFIX . 'actioncomm_reminder AS r';
+        $sql .= '     WHERE r.fk_actioncomm = a.id';
+        $sql .= '     AND r.fk_user = ' . ((int) $user->id);
+        $sql .= '     AND r.status = ' . ActionCommReminder::STATUS_TODO;
+        $sql .= ' )';
         $sql .= ' ORDER BY a.datep ASC';
         $sql .= $this->db->plimit($limit);
 

@@ -485,4 +485,3 @@ ReadAllCallLists=Read all call lists
 # Dashboard - Upcoming reminders
 UpcomingCallReminders = Upcoming reminders
 NoUpcomingCallReminder = No upcoming reminder
-CallReminderCategory = ReedCRM call reminders
