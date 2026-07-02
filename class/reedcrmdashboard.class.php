@@ -205,10 +205,10 @@ class ReedcrmDashboard
     }
 
     /**
-     * Get the upcoming call reminders of the current user.
+     * Get the upcoming call reminders in the current entity.
      *
      * A reminder is a "to-do" event (code AC_OTH, percent 0) that still has a pending
-     * actioncomm_reminder row for the current user. This matches the reminders created from the
+     * actioncomm_reminder row (any user). This matches the reminders created from the
      * ProCard/EventPro "Créer une notification de rappel automatique" checkbox, including the ones
      * created before this feature existed (no dedicated tag is required).
      *
@@ -217,8 +217,6 @@ class ReedcrmDashboard
      */
     public function getUpcomingCallReminders(int $limit = 5): array
     {
-        global $user;
-
         require_once DOL_DOCUMENT_ROOT . '/comm/action/class/actioncommreminder.class.php';
 
         $reminders = [];
@@ -233,7 +231,6 @@ class ReedcrmDashboard
         $sql .= ' AND EXISTS (';
         $sql .= '     SELECT 1 FROM ' . MAIN_DB_PREFIX . 'actioncomm_reminder AS r';
         $sql .= '     WHERE r.fk_actioncomm = a.id';
-        $sql .= '     AND r.fk_user = ' . ((int) $user->id);
         $sql .= '     AND r.status = ' . ActionCommReminder::STATUS_TODO;
         $sql .= ' )';
         $sql .= ' ORDER BY a.datep ASC';
